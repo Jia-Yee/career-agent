@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Agent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #app-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .api-form {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <div class="api-form">
+            <h1>🎯 Career Agent</h1>
+            <div class="form-group">
+                <label for="resume">Upload your resume (PDF)</label>
+                <input type="file" id="resume" accept=".pdf" required>
+            </div>
+            <button onclick="uploadResume()">Analyze Resume</button>
+        </div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://app-soplrpfo.fly.dev';
+
+        async function uploadResume() {
+            const fileInput = document.getElementById('resume');
+            const resultsDiv = document.getElementById('results');
+
+            if (!fileInput.files[0]) {
+                alert('Please select a PDF file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                // Upload resume
+                const uploadResponse = await fetch(`${API_URL}/upload-resume`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadResponse.ok) throw new Error('Resume upload failed');
+
+                const uploadData = await uploadResponse.json();
+                const resumeId = uploadData.resume_id;
+
+                // Get job recommendations
+                const recommendResponse = await fetch(`${API_URL}/recommend-jobs/${resumeId}`);
+                if (!recommendResponse.ok) throw new Error('Failed to get recommendations');
+
+                const recommendations = await recommendResponse.json();
+
+                // Display results
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = `
+                    <h2>Skills Extracted</h2>
+                    <pre>${JSON.stringify(uploadData.skills, null, 2)}</pre>
+                    <h2>Job Recommendations</h2>
+                    <pre>${JSON.stringify(recommendations, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = `<p style="color: red">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
